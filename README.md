@@ -13,7 +13,7 @@ This tool automatically moves inline styles to a global CSS file, helping in cle
 				source my_project_env/bin/activate
 
 			4) INSTALL THE PACKAGES :
-				pip3 install -r requirement.txt 
+				pip3 install -r requirements.txt 
 
 			5) RUN THE SCRIPT : 
 				python3 style_elevator.py
