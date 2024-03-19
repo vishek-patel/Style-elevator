@@ -1,4 +1,5 @@
 # Style-elevator
+This tool automatically moves inline styles to a global CSS file, helping in cleaning up HTML,HTM,JS and JSP files by extracting inline CSS into separate CSS files.
 
 ## HOW TO RUN THE SCRIPT: 
 
@@ -17,6 +18,6 @@
 			5) RUN THE SCRIPT : 
 				python3 style_elevator.py
 
-			4) Once you finish working in the virtual environment, you can deactivate it to return to the global Python environment.
+			6) Once you finish working in the virtual environment, you can deactivate it to return to the global Python environment.
 				deactivate
 
