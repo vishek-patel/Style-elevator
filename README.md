@@ -1,5 +1,5 @@
 # Style-elevator
-This tool automatically moves inline styles to a global CSS file, helping in cleaning up HTML,HTM,JS and JSP files by extracting inline CSS into separate CSS files.
+This tool automatically moves inline styles to a global CSS file, helping in cleaning up **HTML**,**HTM**,**JS** and **JSP** files by extracting inline CSS into separate CSS files.
 
 ## HOW TO RUN THE SCRIPT: 
 
