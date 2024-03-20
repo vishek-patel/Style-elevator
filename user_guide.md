@@ -1,5 +1,6 @@
 
-![image](https://github.com/vishek-patel/Style-elevator/assets/85006315/bbb17d08-844e-4301-84e3-e0d32bff8e4e)
+![image](https://github.com/vishek-patel/Style-elevator/assets/85006315/53c74fa7-8292-424d-8d2c-2c68e3dc55b1)
+
 
 Follow the prompts to select file type, specify input directory, output CSS directory, and optional separator for the global CSS file.
 
