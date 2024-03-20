@@ -1,3 +1,5 @@
+![image](https://github.com/vishek-patel/Style-elevator/assets/85006315/600146c3-4b34-46f7-baab-433ca4f1a511)
+
 # Style Elevator (CSS Inline Style Remover Tool)
 
 The CSS Inline Style Remover Tool is a Python utility designed to streamline the process of removing inline styles from HTML, HTM, JSP, and JS files and consolidating them into a single, reusable CSS file. This tool promotes the separation of concerns between content and presentation, making it easier to maintain and organize web projects.
