@@ -37,6 +37,6 @@ The CSS Inline Style Remover Tool is a Python utility designed to streamline the
 
 Run the script `style_elevator.py` using Python:
  ```
-    python3 style_elevator.py
-    ```
+ python3 style_elevator.py
+ ```
 
