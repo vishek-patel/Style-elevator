@@ -121,6 +121,16 @@ def apply_important_if_critical(style_content):
 
 # The rest of your script, including the `process_files` function, remains the same.
 
+
+def check_for_ngStyle(line, filename, line_number, manual_files):
+    """
+    Check if the given line contains [ngStyle] or *ngStyle.
+    If found, add the file and line number to manual_files list.
+    """
+    if '[ngStyle]' in line or '*ngStyle' in line:
+        manual_files.append(f"{filename} at line {line_number} requires manual checking for [ngStyle] or *ngStyle.")
+
+
 def process_files(directory, file_extension, css_directory, manual_files, separator):
     global_css_filename = 'global.css'
     global_css_path = os.path.join(css_directory, global_css_filename)
@@ -138,6 +148,7 @@ def process_files(directory, file_extension, css_directory, manual_files, separa
                 with open(file_path, 'r') as file:
                     lines = file.readlines()
                 for line_number, line in enumerate(lines, 1):
+                    check_for_ngStyle(line, filename, line_number, manual_files)
                     matches = re.finditer(r'(<[^>]*)(style="([^"]+)")([^>]*>)', line)
                     for match in matches:
                         opening_tag, style_attr, style_content, closing_tag_part = match.groups()
