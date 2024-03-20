@@ -10,7 +10,7 @@ If any files require manual processing (due to inline styles with dynamic conten
 
 ## Example Usage
 
-Suppose you have a directory named `website` containing HTML files with inline styles. To process these files and generate a global CSS file:
+Suppose you have a directory named `home/vishek/web` containing HTML files with inline styles. To process these files and generate a global CSS file:
 
 1. Run the script `css_inline_style_remover.py`.
 2. Select the file type (HTML).
