@@ -98,6 +98,29 @@ def generate_hash(style_content):
     # Combine both to ensure uniqueness even if the style content repeats.
     return f"{unique_id}"
     
+# Define critical properties that absolutely need `!important`
+# Leave this list empty to apply `!important` to all properties.
+critical_properties = ["display", "position", "z-index", "top", "right", "bottom", "left"]
+
+def apply_important_if_critical(style_content):
+    important_style = ""
+    for property in style_content.split(";"):
+        property = property.strip()
+        if property:
+            # Split the property to analyze its name and value
+            prop_name = property.split(":")[0].strip()
+            # If critical_properties is empty or the property name is in the list, add `!important`
+            if not critical_properties or prop_name in critical_properties:
+                if "!" not in property:
+                    important_style += f"{property} !important; "
+                else:
+                    important_style += f"{property}; "
+            else:
+                important_style += f"{property}; "
+    return important_style.strip()
+
+# The rest of your script, including the `process_files` function, remains the same.
+
 def process_files(directory, file_extension, css_directory, manual_files, separator):
     global_css_filename = 'global.css'
     global_css_path = os.path.join(css_directory, global_css_filename)
@@ -114,34 +137,38 @@ def process_files(directory, file_extension, css_directory, manual_files, separa
 
                 with open(file_path, 'r') as file:
                     lines = file.readlines()
-
                 for line_number, line in enumerate(lines, 1):
-                    matches = re.finditer(r'(<[^>]*style="([^"]+)"[^>]*>)', line)
+                    matches = re.finditer(r'(<[^>]*)(style="([^"]+)")([^>]*>)', line)
                     for match in matches:
-                        full_tag, style_content = match.groups()
+                        opening_tag, style_attr, style_content, closing_tag_part = match.groups()
                         if has_variables(style_content):
                             manual_files.append(f"{filename} at line {line_number}")
                             continue
 
                         style_hash = generate_hash(style_content)
 
-                        # class_name = f"{filename.replace('.', '_')}_{style_hash}"  # Replace '.' with '_' for Angular components
                         if style_content not in unique_styles:
                             unique_styles[style_content] = style_hash
                             base_filename_without_extension = os.path.splitext(os.path.basename(filename))[0]
-
-                            # Replace '.' with '_' for Angular component filenames and append the unique style hash
-                            class_name = f"{base_filename_without_extension.replace('.', '_')}_{style_hash}"
-                            styles_to_classname[file_path][style_content] = class_name
+                            new_class_name = f"{base_filename_without_extension.replace('.', '_')}_{style_hash}"
+                            styles_to_classname[file_path][style_content] = new_class_name
                         else:
-                            class_name = styles_to_classname[file_path][style_content]
+                            new_class_name = styles_to_classname[file_path][style_content]
 
-                        if 'class="' in full_tag:
-                            new_tag = re.sub(r'class="([^"]*)"',
-                                             lambda m: f'class="{m.group(1)} {class_name}"', full_tag)
+                        # Handle existing class attribute
+                        class_match = re.search(r'class="([^"]*)"', opening_tag + closing_tag_part)
+                        if class_match:
+                            existing_classes = class_match.group(1)
+                            new_classes = f"{existing_classes} {new_class_name}".strip()
+                            # Replace the existing class attribute with the updated one
+                            new_tag = re.sub(r'class="[^"]*"', f'class="{new_classes}"', opening_tag + closing_tag_part)
                         else:
-                            new_tag = full_tag.replace(f'style="{style_content}"', f'class="{class_name}"')
-                        line = line.replace(full_tag, re.sub(r'style="[^"]*"', '', new_tag))
+                            new_tag = re.sub(r'(<[^>]*)(>)', r'\1 class="' + new_class_name + r'"\2', opening_tag + closing_tag_part)
+
+                        # Remove the style attribute and replace the tag in the line
+                        new_tag = new_tag.replace(style_attr, "").replace("  ", " ")
+                        line = line.replace(match.group(0), new_tag)
+
                     lines[line_number - 1] = line
 
                 with open(file_path, 'w') as file:
@@ -152,7 +179,8 @@ def process_files(directory, file_extension, css_directory, manual_files, separa
             css_file.write(f"\n\n/* {separator} */\n")
         for filepath, styles in styles_to_classname.items():
             for style, class_name in styles.items():
-                css_file.write(f".{class_name} {{ {style} }}\n")
+                important_style = apply_important_if_critical(style)
+                css_file.write(f".{class_name} {{ {important_style} }}\n")
 
 def print_manual_files(manual_files):
     if manual_files:
