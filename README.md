@@ -22,11 +22,26 @@ The CSS Inline Style Remover Tool is a Python utility designed to streamline the
     git clone https://github.com/your_username/css-inline-style-remover.git
     ```
 
-2. Install the required dependencies (`rich`, `colorama`) via pip:
+2. Install the required dependencies from the `requirements.txt` file:
 
+    ```bash
+    pip install -r requirements.txt
     ```
-    pip3 install -r requirements.txt
+3. Activate the virtual environment:
+
+    - **Windows:**
+
+    ```bash
+    venv\Scripts\activate
     ```
+
+    - **Unix/macOS:**
+
+    ```bash
+    source venv/bin/activate
+    ```
+
+
 
 ## Getting Started
 
