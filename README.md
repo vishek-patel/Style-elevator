@@ -19,7 +19,7 @@ The CSS Inline Style Remover Tool is a Python utility designed to streamline the
 1. Clone or download the repository from GitHub:
 
     ```
-    [git clone https://github.com/your_username/css-inline-style-remover.git](https://github.com/vishek-patel/Style-elevator.git)
+    git clone https://github.com/your_username/css-inline-style-remover.git
     ```
 
 2. Install the required dependencies from the `requirements.txt` file:
