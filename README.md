@@ -7,7 +7,7 @@ The CSS Inline Style Remover Tool is a Python utility designed to streamline the
 ## Key Features
 
 - **Automatic Extraction:** Automatically identifies and extracts inline CSS styles from specified files.
-- **Consolidation:** Consolidates extracted styles into a global CSS file for easy management. ( In case of Angular , it will move the respective 'scss/css' files )
+- **Consolidation:** Consolidates extracted styles into a global CSS file for easy management. ( In case of Angular , it will move the extracted styles to respective 'scss/css' files )
 - **User-Friendly Interface:** Utilizes the command-line interface with enhanced features for clear interaction.
 - **Customization:** Allows users to specify input and output directories, file types, and separator for CSS consolidation.
 
