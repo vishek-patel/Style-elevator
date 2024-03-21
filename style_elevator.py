@@ -100,7 +100,7 @@ def generate_hash(style_content):
     
 # Define critical properties that absolutely need `!important`
 # Leave this list empty to apply `!important` to all properties.
-critical_properties = ["display", "position", "z-index", "top", "right", "bottom", "left"]
+critical_properties = ["position", "z-index", "top", "right", "bottom", "left"]
 
 def apply_important_if_critical(style_content):
     important_style = ""
@@ -136,12 +136,15 @@ def process_files(directory, file_extension, css_directory, manual_files, separa
     global_css_path = os.path.join(css_directory, global_css_filename)
     os.makedirs(css_directory, exist_ok=True)
     styles_to_classname = defaultdict(lambda: defaultdict(str))
-    
+
     need_separator = os.path.exists(global_css_path) and os.path.getsize(global_css_path) > 0
 
     for root, dirs, files in os.walk(directory):
         for filename in files:
             if filename.endswith(f".{file_extension}"):
+                is_angular_component = filename.endswith(".component.html")
+                scss_path = os.path.join(root, filename.replace(".component.html", ".component.scss")) if is_angular_component else None
+                
                 file_path = os.path.join(root, filename)
                 unique_styles = {}
 
@@ -185,10 +188,19 @@ def process_files(directory, file_extension, css_directory, manual_files, separa
                 with open(file_path, 'w') as file:
                     file.writelines(lines)
 
-    with open(global_css_path, 'a' if need_separator else 'w') as css_file:
-        if need_separator:
-            css_file.write(f"\n\n/* {separator} */\n")
-        for filepath, styles in styles_to_classname.items():
+    # For Angular components, add styles to respective SCSS files
+    for filepath, styles in styles_to_classname.items():
+        if filepath.endswith(".component.html"):
+            scss_file_path = filepath.replace(".component.html", ".component.scss")
+        else:
+            scss_file_path = None
+            
+        css_output_path = scss_file_path if scss_file_path and os.path.exists(scss_file_path) else global_css_path
+        need_separator = os.path.exists(css_output_path) and os.path.getsize(css_output_path) > 0
+        
+        with open(css_output_path, 'a' if need_separator else 'w') as css_file:
+            if need_separator:
+                css_file.write(f"\n\n/* {separator} */\n")
             for style, class_name in styles.items():
                 important_style = apply_important_if_critical(style)
                 css_file.write(f".{class_name} {{ {important_style} }}\n")
