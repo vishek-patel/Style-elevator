@@ -75,7 +75,7 @@ def generate_class_name(filename, counter):
 def has_variables(style):
     # Patterns to match various templating languages, embedded expressions, and React JSX
     patterns = [
-        r'\$\{[^}]+\}',  # JavaScript Template Literals, JSP ${}
+        r'\$\{[^}]+\};?' # JavaScript Template Literals, JSP ${}
         r'@\{[^}]+\}',   # ASP.NET Razor Syntax
         r'\{\{[^}]+\}\}', # Angular, Vue, Handlebars, etc.
         r'<%=[^%>]+%>',  # JSP Scriptlet Expressions
@@ -130,6 +130,20 @@ def check_for_ngStyle(line, filename, line_number, manual_files):
     if '[ngStyle]' in line or '*ngStyle' in line:
         manual_files.append(f"{filename} at line {line_number} requires manual checking for [ngStyle] or *ngStyle.")
 
+def check_for_jsp(line, filename, line_number, manual_files):
+    """
+    Check if any style attribute within the line contains JSP variables.
+    If found, add the file and line number to manual_files list.
+    """
+    # Find all style attributes in the line
+    style_attributes = re.findall(r'style="([^"]*)"', line)
+
+    for style in style_attributes:
+        # Check if the style string contains JSP variables or similar patterns
+        if has_variables(style):
+            manual_files.append(f"{filename} at line {line_number} requires manual checking for JSP variables in style attributes")
+            break  # Stop after finding the first instance to avoid duplicate messages for the same line
+
 
 def process_files(directory, file_extension, css_directory, manual_files, separator):
     global_css_filename = 'global.css'
@@ -146,64 +160,78 @@ def process_files(directory, file_extension, css_directory, manual_files, separa
                 scss_path = os.path.join(root, filename.replace(".component.html", ".component.scss")) if is_angular_component else None
                 
                 file_path = os.path.join(root, filename)
+
+                with open(file_path, 'r', encoding='utf-8') as file:
+                    content = file.read()
+
+                unique_styles = {}
+                modified = False
+ 
+                matches = re.finditer(r'<[^>]*?\sstyle\s*=\s*(["\'])(.*?)\1[^>]*?>', content, re.DOTALL)
+
+
+                for match in matches:
+                    full_tag = match.group(0)
+                    inline_style = match.group(2).strip()
+
+                    if '[ngStyle]' in full_tag or '*ngStyle' in full_tag:
+                        # manual_files.append(f"{filename} requires manual checking for [ngStyle] or *ngStyle.")
+                        continue
+
+                    if has_variables(inline_style):
+                        # manual_files.append(f"{filename} requires manual review due to variables in inline style.")
+                        continue
+
+                    style_hash = generate_hash(inline_style)
+                    new_class_name = f"{os.path.splitext(os.path.basename(filename))[0].replace('.', '_')}_{style_hash}"
+                    
+                    if inline_style not in unique_styles:
+                        unique_styles[inline_style] = new_class_name
+                        modified = True
+
+                        # Detect existing class attribute and prepare modifications
+                    class_attr_match = re.search(r'class="([^"]*)"', full_tag)
+                    if class_attr_match:
+                        existing_classes = class_attr_match.group(1)
+                        new_classes = f"{existing_classes} {new_class_name}"
+                        new_tag = re.sub(r'class="[^"]*"', f'class="{new_classes}"', full_tag, 1)
+                    else:
+                        # If class attribute does not exist, add one
+                        new_tag = re.sub(r'style="[^"]*"', f'class="{new_class_name}"', full_tag, 1)
+
+                    new_tag = re.sub(r'\s*style\s*=\s*(["\']).*?\1', '', new_tag, flags=re.DOTALL, count=1)
+
+
+
+                    content = content.replace(full_tag, new_tag)
+                if modified:
+                    with open(file_path, 'w', encoding='utf-8') as file:
+                        file.write(content)
+
+                css_output_path = scss_path if scss_path and os.path.exists(scss_path) else global_css_path
+                need_separator = os.path.exists(css_output_path) and os.path.getsize(css_output_path) > 0
+
+                with open(css_output_path, 'a' if need_separator else 'w', encoding='utf-8') as css_file:
+                    if need_separator and unique_styles:
+                        css_file.write(f"\n\n/* {separator} */\n")
+                    for style, class_name in unique_styles.items():
+                        important_style = apply_important_if_critical(style)
+                        css_file.write(f".{class_name} {{ {important_style} }}\n")
+
+def check_files(directory, file_extension, css_directory, manual_files, separator):
+
+    for root, dirs, files in os.walk(directory):
+        for filename in files:
+            if filename.endswith(f".{file_extension}"):
+
+                file_path = os.path.join(root, filename)
                 unique_styles = {}
 
                 with open(file_path, 'r') as file:
                     lines = file.readlines()
                 for line_number, line in enumerate(lines, 1):
                     check_for_ngStyle(line, filename, line_number, manual_files)
-                    matches = re.finditer(r'(<[^>]*)(style="([^"]+)")([^>]*>)', line)
-                    for match in matches:
-                        opening_tag, style_attr, style_content, closing_tag_part = match.groups()
-                        if has_variables(style_content):
-                            manual_files.append(f"{filename} at line {line_number}")
-                            continue
-
-                        style_hash = generate_hash(style_content)
-
-                        if style_content not in unique_styles:
-                            unique_styles[style_content] = style_hash
-                            base_filename_without_extension = os.path.splitext(os.path.basename(filename))[0]
-                            new_class_name = f"{base_filename_without_extension.replace('.', '_')}_{style_hash}"
-                            styles_to_classname[file_path][style_content] = new_class_name
-                        else:
-                            new_class_name = styles_to_classname[file_path][style_content]
-
-                        # Handle existing class attribute
-                        class_match = re.search(r'class="([^"]*)"', opening_tag + closing_tag_part)
-                        if class_match:
-                            existing_classes = class_match.group(1)
-                            new_classes = f"{existing_classes} {new_class_name}".strip()
-                            # Replace the existing class attribute with the updated one
-                            new_tag = re.sub(r'class="[^"]*"', f'class="{new_classes}"', opening_tag + closing_tag_part)
-                        else:
-                            new_tag = re.sub(r'(<[^>]*)(>)', r'\1 class="' + new_class_name + r'"\2', opening_tag + closing_tag_part)
-
-                        # Remove the style attribute and replace the tag in the line
-                        new_tag = new_tag.replace(style_attr, "").replace("  ", " ")
-                        line = line.replace(match.group(0), new_tag)
-
-                    lines[line_number - 1] = line
-
-                with open(file_path, 'w') as file:
-                    file.writelines(lines)
-
-    # For Angular components, add styles to respective SCSS files
-    for filepath, styles in styles_to_classname.items():
-        if filepath.endswith(".component.html"):
-            scss_file_path = filepath.replace(".component.html", ".component.scss")
-        else:
-            scss_file_path = None
-            
-        css_output_path = scss_file_path if scss_file_path and os.path.exists(scss_file_path) else global_css_path
-        need_separator = os.path.exists(css_output_path) and os.path.getsize(css_output_path) > 0
-        
-        with open(css_output_path, 'a' if need_separator else 'w') as css_file:
-            if need_separator:
-                css_file.write(f"\n\n/* {separator} */\n")
-            for style, class_name in styles.items():
-                important_style = apply_important_if_critical(style)
-                css_file.write(f".{class_name} {{ {important_style} }}\n")
+                    check_for_jsp(line, filename, line_number, manual_files)
 
 def print_manual_files(manual_files):
     if manual_files:
@@ -219,6 +247,7 @@ def main():
 
         file_extension, directory, css_directory, separator = get_user_input()
         manual_files = []  # Initialize manual_files list for each run
+        check_files(directory, file_extension, css_directory, manual_files, separator)
         process_files(directory, file_extension, css_directory, manual_files, separator)
         print_manual_files(manual_files)
         display_completion_message()
