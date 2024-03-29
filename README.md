@@ -24,17 +24,12 @@ The CSS Inline Style Remover Tool is a Python utility designed to streamline the
     git clone https://github.com/vishek-patel/Style-elevator.git
     ```
 
-2. Install the required dependencies from the `requirements.txt` file:
-
-    ```bash
-    pip install -r requirements.txt
-    ```
-3. Create the virtual environment:
+2. Create the virtual environment:
 
     ```bash
     python3 -m venv venv
     ```
-4. Activate the virtual environment:
+3. Activate the virtual environment:
 
     - **Windows:**
 
@@ -47,6 +42,13 @@ The CSS Inline Style Remover Tool is a Python utility designed to streamline the
     ```bash
     source venv/bin/activate
     ```
+4. Install the required dependencies from the `requirements.txt` file:
+
+    ```bash
+    pip3 install -r requirements.txt
+    ```
+    
+
 5. Run the script:
 
     ```bash
