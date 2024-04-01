@@ -167,7 +167,8 @@ def process_files(directory, file_extension, css_directory, manual_files, separa
                 unique_styles = {}
                 modified = False
  
-                matches = re.finditer(r'<[^>]*?\sstyle\s*=\s*(["\'])(.*?)\1[^>]*?>', content, re.DOTALL)
+                matches = re.finditer(r'<[^>]*?\s*style\s*=\s*(["\'])(.*?)\1[^>]*?>', content, re.DOTALL)
+
 
 
                 for match in matches:
@@ -185,9 +186,9 @@ def process_files(directory, file_extension, css_directory, manual_files, separa
                     style_hash = generate_hash(inline_style)
                     new_class_name = f"{os.path.splitext(os.path.basename(filename))[0].replace('.', '_')}_{style_hash}"
                     
-                    if inline_style not in unique_styles:
-                        unique_styles[inline_style] = new_class_name
-                        modified = True
+                    # if inline_style not in unique_styles:
+                    unique_styles[new_class_name] = inline_style
+                    modified = True
 
                         # Detect existing class attribute and prepare modifications
                     class_attr_match = re.search(r'class="([^"]*)"', full_tag)
@@ -214,7 +215,7 @@ def process_files(directory, file_extension, css_directory, manual_files, separa
                 with open(css_output_path, 'a' if need_separator else 'w', encoding='utf-8') as css_file:
                     if need_separator and unique_styles:
                         css_file.write(f"\n\n/* {separator} */\n")
-                    for style, class_name in unique_styles.items():
+                    for class_name, style in unique_styles.items():
                         important_style = apply_important_if_critical(style)
                         css_file.write(f".{class_name} {{ {important_style} }}\n")
 
