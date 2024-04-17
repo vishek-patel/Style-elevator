@@ -14,6 +14,7 @@ import hashlib
 import time
 import uuid
 
+
 # Initialize colorama for colored output
 init(autoreset=True)
 
