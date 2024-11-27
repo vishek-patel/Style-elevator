@@ -46,10 +46,12 @@ Select the file type to process:
 2) HTM (*.htm)
 3) JSP (*.jsp)
 4) JS (*.js)
+5) TS (*.ts)
+6) TSX (*.tsx)
 
 """
     console.print((file_type_prompt))
-    file_extension_choices = {"1": "html", "2": "htm", "3": "jsp","4": "js" }
+    file_extension_choices = {"1": "html", "2": "htm", "3": "jsp","4": "js", "5": "ts","6": "tsx",}
     file_extension = Prompt.ask("[bold yellow]\nEnter your choice[/]", choices=["1", "2","3","4"], default="1", show_choices=True)
     
     directory = Prompt.ask("[bold cyan]\nEnter the directory to process[/]")
