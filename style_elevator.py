@@ -181,7 +181,7 @@ def process_files(directory, file_extension, css_directory, manual_files, separa
 
                     if '[ngStyle]' in full_tag or '*ngStyle' in full_tag:
                         # manual_files.append(f"{filename} requires manual checking for [ngStyle] or *ngStyle.")
-                        continue
+                        None
 
                     if has_variables(inline_style):
                         # manual_files.append(f"{filename} requires manual review due to variables in inline style.")
