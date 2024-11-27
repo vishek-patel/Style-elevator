@@ -31,12 +31,12 @@ def print_header(first_time=True):
         print(Fore.CYAN + header)
 
 def display_header():
-    header_markdown = """
-**Author**: Vishek-Patel
+    console.print("[bold cyan]Author[/bold cyan]: [bold green]Vishek-Patel[/bold green]")
 
+    header_markdown = """
 This tool automatically moves inline styles to a global CSS file, helping in cleaning up HTML, HTM, JS, JSP, TS, TSX, and JSX files by extracting inline CSS into separate CSS files.\n
 """
-    console.print(Markdown(header_markdown))
+    console.print(header_markdown)
 
 def get_user_input():
     file_type_prompt = """
