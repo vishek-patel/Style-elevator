@@ -15,10 +15,10 @@ Suppose you have a directory named `home/web` containing HTML files with inline 
 
 1. Run the script `style_elevator.py`.
 2. Select the file type (HTML).
-3. Enter the directory path (`home/web`) containing your HTML files.
-4. Specify the output CSS directory (e.g., `home/web/css`).
+3. Enter the directory path (`home/web` or the `src` directory in case of angular application) containing your HTML files.
+4. Specify the output CSS directory (e.g., `home/web/css` or the `src` directory in case of angular application).
 5. Optionally, provide a separator for the global CSS file.
-6. Review the processed files and the generated global CSS file in the `home/web/css` directory.
+6. Review the processed files and the generated global CSS file in the `home/web/css` or the `src` directory in case of angular application.
 
 ## Contribution
 
