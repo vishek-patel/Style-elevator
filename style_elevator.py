@@ -34,7 +34,7 @@ def display_header():
     header_markdown = """
 **Author**: Vishek-Patel
 
-This tool automatically moves inline styles to a global CSS file, helping in cleaning up **HTML**,**HTM**,**JS** and **JSP** files by extracting inline CSS into separate CSS files.\n
+This tool automatically moves inline styles to a global CSS file, helping in cleaning up HTML, HTM, JS, JSP, TS, TSX, and JSX files by extracting inline CSS into separate CSS files.\n
 """
     console.print(Markdown(header_markdown))
 
@@ -48,11 +48,12 @@ Select the file type to process:
 4) JS (*.js)
 5) TS (*.ts)
 6) TSX (*.tsx)
+7) JSX (*.jsx)
 
 """
     console.print((file_type_prompt))
-    file_extension_choices = {"1": "html", "2": "htm", "3": "jsp","4": "js", "5": "ts","6": "tsx",}
-    file_extension = Prompt.ask("[bold yellow]\nEnter your choice[/]", choices=["1", "2","3","4","5","6"], default="1", show_choices=True)
+    file_extension_choices = {"1": "html", "2": "htm", "3": "jsp","4": "ts", "5": "ts", "6": "tsx", "7": "jsx"}
+    file_extension = Prompt.ask("[bold yellow]\nEnter your choice[/]", choices=["1", "2","3","4","5","6","7"], default="1", show_choices=True)
     
     directory = Prompt.ask("[bold cyan]\nEnter the directory to process[/]")
     css_directory = Prompt.ask("[bold cyan]Enter the output CSS directory[/]")
@@ -61,7 +62,7 @@ Select the file type to process:
     return file_extension_choices[file_extension], directory, css_directory, separator
 
 def display_completion_message():
-    completion_message = "Processing complete. Check 'global.css' for the consolidated styles."
+    completion_message = "Processing complete. Check 'global.css' for the consolidated styles. \nIn case of angular components, the styles are added to the respective .scss files.\nMake sure to include the 'global.css' file in your angular.json"
     console.print(Panel(completion_message, expand=False))
 
 def display_continue_prompt():
@@ -126,13 +127,24 @@ def apply_important_if_critical(style_content):
 # The rest of your script, including the `process_files` function, remains the same.
 
 
-def check_for_ngStyle(line, filename, line_number, manual_files):
+def check_for_ng_directives(line, filename, line_number, manual_files):
     """
-    Check if the given line contains [ngStyle] or *ngStyle.
-    If found, add the file and line number to manual_files list.
+    Check if the given line contains Angular directives or style bindings.
+    If found, add the file and line number to the manual_files list with a specific message.
     """
-    if '[ngStyle]' in line or '*ngStyle' in line:
-        manual_files.append(f"{filename} at line {line_number} requires manual checking for [ngStyle] or *ngStyle.")
+    # Check for different Angular directives or style bindings
+    angular_directives = [
+        ('[ngStyle]', '[ngStyle]'),
+        ('*ngStyle', '*ngStyle'),
+        ('[ngClass]', '[ngClass]'),
+        ('*ngClass', '*ngClass'),
+        ('[style.', '[style.*]')
+    ]
+    
+    for directive, directive_name in angular_directives:
+        if directive in line:
+            manual_files.append(f"{filename} at line {line_number} requires manual checking for {directive_name}.")
+
 
 def check_for_jsp(line, filename, line_number, manual_files):
     """
@@ -147,8 +159,7 @@ def check_for_jsp(line, filename, line_number, manual_files):
         if has_variables(style):
             manual_files.append(f"{filename} at line {line_number} requires manual checking for JSP variables in style attributes")
             break  # Stop after finding the first instance to avoid duplicate messages for the same line
-
-
+    
 def process_files(directory, file_extension, css_directory, manual_files, separator):
     global_css_filename = 'global.css'
     global_css_path = os.path.join(css_directory, global_css_filename)
@@ -173,19 +184,9 @@ def process_files(directory, file_extension, css_directory, manual_files, separa
  
                 matches = re.finditer(r'<[^>]*?\s*style\s*=\s*(["\'])(.*?)\1[^>]*?>', content, re.DOTALL)
 
-
-
                 for match in matches:
                     full_tag = match.group(0)
                     inline_style = match.group(2).strip()
-
-                    if '[ngStyle]' in full_tag or '*ngStyle' in full_tag:
-                        # manual_files.append(f"{filename} requires manual checking for [ngStyle] or *ngStyle.")
-                        None
-
-                    if has_variables(inline_style):
-                        # manual_files.append(f"{filename} requires manual review due to variables in inline style.")
-                        continue
 
                     style_hash = generate_hash(inline_style)
                     new_class_name = f"{os.path.splitext(os.path.basename(filename))[0].replace('.', '_')}_{style_hash}"
@@ -235,7 +236,7 @@ def check_files(directory, file_extension, css_directory, manual_files, separato
                 with open(file_path, 'r') as file:
                     lines = file.readlines()
                 for line_number, line in enumerate(lines, 1):
-                    check_for_ngStyle(line, filename, line_number, manual_files)
+                    check_for_ng_directives(line, filename, line_number, manual_files)
                     check_for_jsp(line, filename, line_number, manual_files)
 
 def print_manual_files(manual_files):
