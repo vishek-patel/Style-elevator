@@ -52,14 +52,18 @@ Select the file type to process:
 
 """
     console.print((file_type_prompt))
-    file_extension_choices = {"1": "html", "2": "htm", "3": "jsp","4": "ts", "5": "ts", "6": "tsx", "7": "jsx"}
-    file_extension = Prompt.ask("[bold yellow]\nEnter your choice[/]", choices=["1", "2","3","4","5","6","7"], default="1", show_choices=True)
-    
+    file_extension_choices = {"1": "html", "2": "htm", "3": "jsp", "4": "ts", "5": "ts", "6": "tsx", "7": "jsx"}
+    file_extension = Prompt.ask("[bold yellow]\nEnter your choice[/]", choices=["1", "2", "3", "4", "5", "6", "7"], default="1", show_choices=True)
+
     directory = Prompt.ask("[bold cyan]\nEnter the directory to process[/]")
     css_directory = Prompt.ask("[bold cyan]Enter the output CSS directory[/]")
     separator = Prompt.ask("[bold cyan]Enter a separator to use in the 'global.css' file[/]", default="Update")
 
-    return file_extension_choices[file_extension], directory, css_directory, separator
+    # New prompt to ask if they want to add !important to styles
+    important_prompt = Prompt.ask("[bold yellow]Do you want to add !important to each of the styles? (1 for Yes, 2 for No)[/]", choices=["1", "2"], default="1")
+    add_important = important_prompt == "1"
+
+    return file_extension_choices[file_extension], directory, css_directory, separator, add_important
 
 def display_completion_message():
     completion_message = "Processing complete. Check 'global.css' for the consolidated styles. \nIn case of angular components, the styles are added to the respective .scss files.\nMake sure to include the 'global.css' file in your angular.json"
@@ -107,19 +111,22 @@ def generate_hash(style_content):
 # Leave this list empty to apply `!important` to all properties.
 critical_properties = ["position", "z-index", "top", "right", "bottom", "left"]
 
-def apply_important_if_critical(style_content):
+def apply_important_if_critical(style_content, add_important):
+    """
+    If add_important is True, it will add `!important` to each style property.
+    """
     important_style = ""
     for property in style_content.split(";"):
         property = property.strip()
         if property:
             # Split the property to analyze its name and value
             prop_name = property.split(":")[0].strip()
-            # If critical_properties is empty or the property name is in the list, add `!important`
-            if not critical_properties or prop_name in critical_properties:
+            if add_important:
+                # Add `!important` to all properties if the user wants it
                 if "!" not in property:
                     important_style += f"{property} !important; "
                 else:
-                    important_style += f"{property}; "
+                    important_style += f"{property} !important; "
             else:
                 important_style += f"{property}; "
     return important_style.strip()
@@ -138,7 +145,60 @@ def check_for_ng_directives(line, filename, line_number, manual_files):
         ('*ngStyle', '*ngStyle'),
         ('[ngClass]', '[ngClass]'),
         ('*ngClass', '*ngClass'),
-        ('[style.', '[style.*]')
+        ('[style.', '[style.*]'),
+        ('[class.', '[class.*]'),
+        # for dynamic injection of styles using ts
+        ('style.', 'style binding'),
+        ('class.', 'class binding'),
+
+        # using renderer2 to set styles
+        ('renderer2.setStyle', 'Renderer2.setStyle'),
+        ('renderer2.addClass', 'Renderer2.addClass'),
+        ('.setStyle', 'Renderer2.setStyle'),
+        # for jsp and jquery
+        ('${', 'JSP or jQuery variable'),
+        ('<%', 'JSP scriptlet'),
+        ('<c:out', 'JSP expression'),
+        ('<c:set', 'JSP expression'),
+        ('<c:if', 'JSP expression'),
+        ('<c:choose', 'JSP expression'),
+        ('<c:forEach', 'JSP expression'),
+        ('<c:when', 'JSP expression'),
+        ('<c:otherwise', 'JSP expression'),
+        ('<c:import', 'JSP expression'),
+        ('<c:redirect', 'JSP expression'),
+        ('<c:catch', 'JSP expression'),
+        ('<c:forTokens', 'JSP expression'),
+        ('<c:out', 'JSP expression'),
+        ('<c:remove', 'JSP expression'),
+        ('<c:param', 'JSP expression'),
+        ('<c:when', 'JSP expression'),
+        ('<c:otherwise', 'JSP expression'),
+        ('<c:catch', 'JSP expression'),
+        ('<c:forTokens', 'JSP expression'),
+        ('<c:out', 'JSP expression'),
+        ('<c:remove', 'JSP expression'),
+        ('<c:param', 'JSP expression'),
+        ('<c:when', 'JSP expression'),
+        ('<c:otherwise', 'JSP expression'),
+        ('<c:catch', 'JSP expression'),
+        ('<c:forTokens', 'JSP expression'),
+        ('<c:out', 'JSP expression'),
+        ('<c:remove', 'JSP expression'),
+        ('<c:param', 'JSP expression'),
+        ('<c:when', 'JSP expression'),
+        ('<c:otherwise', 'JSP expression'),
+        ('<c:catch', 'JSP expression'),
+        ('<c:forTokens', 'JSP expression'),
+        ('<c:out', 'JSP expression'),
+        ('<c:remove', 'JSP expression'),
+        ('<c:param', 'JSP expression'),
+        ('<c:when', 'JSP expression'),
+        ('<c:otherwise', 'JSP expression'),
+        ('<c:catch', 'JSP expression'),
+        ('<c:forTokens', 'JSP expression'),
+        ('<c:out', 'JSP, JSTL expression'),
+
     ]
     
     for directive, directive_name in angular_directives:
@@ -160,7 +220,7 @@ def check_for_jsp(line, filename, line_number, manual_files):
             manual_files.append(f"{filename} at line {line_number} requires manual checking for JSP variables in style attributes")
             break  # Stop after finding the first instance to avoid duplicate messages for the same line
     
-def process_files(directory, file_extension, css_directory, manual_files, separator):
+def process_files(directory, file_extension, css_directory, manual_files, separator,add_important):
     global_css_filename = 'global.css'
     global_css_path = os.path.join(css_directory, global_css_filename)
     os.makedirs(css_directory, exist_ok=True)
@@ -221,7 +281,7 @@ def process_files(directory, file_extension, css_directory, manual_files, separa
                     if need_separator and unique_styles:
                         css_file.write(f"\n\n/* {separator} */\n")
                     for class_name, style in unique_styles.items():
-                        important_style = apply_important_if_critical(style)
+                        important_style = apply_important_if_critical(style, add_important)
                         css_file.write(f".{class_name} {{ {important_style} }}\n")
 
 def check_files(directory, file_extension, css_directory, manual_files, separator):
@@ -251,10 +311,10 @@ def main():
     display_header()
     while True:
 
-        file_extension, directory, css_directory, separator = get_user_input()
+        file_extension, directory, css_directory, separator, add_important = get_user_input()
         manual_files = []  # Initialize manual_files list for each run
         check_files(directory, file_extension, css_directory, manual_files, separator)
-        process_files(directory, file_extension, css_directory, manual_files, separator)
+        process_files(directory, file_extension, css_directory, manual_files, separator, add_important)
         print_manual_files(manual_files)
         display_completion_message()
         
