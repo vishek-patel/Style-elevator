@@ -22,7 +22,9 @@ The CSS Inline Style Remover Tool is a Python utility designed to streamline the
 
     ```
     git clone https://github.com/vishek-patel/Style-elevator.git
+    cd Style-elevator
     ```
+    
 
 2. Create the virtual environment:
 
